@@ -1,0 +1,6 @@
+.env
+data/vectorstore.json
+data/pdfs/*.pdf
+__pycache__/
+.venv/
+*.pyc

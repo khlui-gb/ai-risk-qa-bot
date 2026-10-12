@@ -1,0 +1,14 @@
+[Unit]
+Description=AI Risk QA Bot (Telegram RAG)
+After=network.target
+
+[Service]
+WorkingDirectory=/root/ai-risk-qa-bot
+Environment=PATH=/root/ai-risk-qa-bot/.venv/bin
+ExecStart=/root/ai-risk-qa-bot/.venv/bin/python bot.py
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
