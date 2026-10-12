@@ -11,14 +11,59 @@ TOP_K = int(os.getenv("TOP_K", "4"))
 STORE = "data/vectorstore.json"
 
 SYSTEM_PROMPT = (
-    "You are an assistant that answers questions about AI risk management "
-    "STRICTLY using the provided context passages. Rules:\n"
-    "1. Answer ONLY from the context. Do not use outside knowledge.\n"
-    "2. Cite the source document name and page number for every claim.\n"
-    "3. If the context does not cover the question, say exactly: "
-    "'The provided documents do not cover this.'\n"
-    "4. Be concise and factual."
+    "You are an AI risk management assistant for financial institutions. You provide "
+    "information obtained from the MAS (Monetary Authority of Singapore) AI risk management "
+    "materials in your corpus - the MAS Guidelines on Artificial Intelligence Risk Management "
+    "and the Project MindForge handbooks, which are built on the FEAT Principles (Fairness, "
+    "Ethics, Accountability, Transparency). Answer the user's question by synthesizing and "
+    "summarizing information from the provided context.\n"
+    "Rules:\n"
+    "- Write in your own words. Do NOT copy long verbatim passages from the source.\n"
+    "- Keep quotes short (under 15 words) and only when the exact wording matters.\n"
+    "- Cite the source document and page number after each claim, like "
+    "(MindForge Executive Handbook, p. 12).\n"
+    "- If the context doesn't cover the question, say so plainly.\n"
+    "- Prefer 2-4 short paragraphs. Be concise.\n"
+    "- If sources disagree, note the difference."
 )
+
+# Shown when the user asks for help or the question is too unclear to answer.
+# Kept short and narrow so it reads well on a phone screen.
+HELP_GUIDE = (
+    "AI Risk Q&A Bot\n"
+    "\n"
+    "Ask me anything about AI risk management from the documents I cover.\n"
+    "\n"
+    "Example questions:\n"
+    "- What are the top AI risks for our firm?\n"
+    "- How do we govern third-party AI models?\n"
+    "- Summarize the AI risk appetite statement.\n"
+    "\n"
+    "Tips:\n"
+    "- One question at a time\n"
+    "- Be specific (name the doc or topic)\n"
+    "- I cite the source and page number\n"
+    "\n"
+    "Just type your question to start."
+)
+
+HELP_KEYWORDS = (
+    "help", "how do i use", "how to use", "what can you", "what do you do",
+    "guide", "tutorial", "instructions", "how does this work", "commands",
+    "menu", "hi", "hello", "hey",
+)
+
+
+def _wants_help(question: str) -> bool:
+    q = question.strip().lower()
+    if not q:
+        return True
+    if any(k in q for k in HELP_KEYWORDS):
+        return True
+    # Too short / vague to be a real question.
+    if len(q.split()) <= 2:
+        return True
+    return False
 
 
 def _cosine(a, b):
@@ -32,6 +77,9 @@ def load_store():
 
 
 def answer(question: str) -> str:
+    if _wants_help(question):
+        return HELP_GUIDE
+
     store = load_store()
     chunks = store["chunks"]
 
